@@ -1,3 +1,4 @@
+getgenv().bypass_adonis = true
 if not game:IsLoaded() then 
     game.Loaded:Wait()
 end
@@ -68,7 +69,7 @@ end
 local SilentAimSettings = {
     Enabled = false,
     
-    ClassName = "Mercury  |  Interpole.",
+    ClassName = "</> emberlash #FREESTYLE",
     ToggleKey = "U",
     
     TeamCheck = false,
@@ -305,28 +306,68 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-
-
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/FakeAngles/PasteWare/refs/heads/main/linoralib.lua"))()
-local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FakeAngles/PasteWare/refs/heads/main/manage2.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/FakeAngles/PasteWare/refs/heads/main/manager.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Vasya13372/lib/refs/heads/main/linoralib.lua"))()
+local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Vasya13372/lib/refs/heads/main/manage2.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Vasya13372/lib/refs/heads/main/manager.lua"))()
 
 Library.KeybindFrame.Visible = true;
+Library:SetWatermarkVisibility(true)
+
+local FrameTimer = tick()
+local FrameCounter = 0
+local FPS = 60
+local StartTime = os.time()
+local ScriptVersion = "1.1"
+
+local function formatTime(seconds)
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = math.floor(seconds % 60)
+    return string.format("%02d:%02d:%02d", hours, minutes, secs)
+end
+
+local function getCurrentTime()
+    return os.date("%H:%M:%S")
+end
+
+local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
+    FrameCounter += 1
+    if (tick() - FrameTimer) >= 1 then
+        FPS = FrameCounter
+        FrameTimer = tick()
+        FrameCounter = 0
+    end
+    local ping = math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+    local gameTime = formatTime(os.time() - StartTime)
+    local currentTime = getCurrentTime()
+    local playerName = game:GetService("Players").LocalPlayer.Name
+    Library:SetWatermark(('</> emberlash | %s fps | %s ms | %s | %s | %s | v%s'):format(
+        math.floor(FPS),
+        ping,
+        playerName,
+        gameTime,
+        currentTime,
+        ScriptVersion
+    ))
+end)
+
+
 
 local Window = Library:CreateWindow({
-    Title = 'Mercury  |  Interpole.',
+    Title = '</> emberlash #FREESTYLE',
     Center = true,
     AutoShow = true,  
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
 
-local GeneralTab = Window:AddTab("Main")
-local aimbox = GeneralTab:AddRightGroupbox("AimLock settings")
-local velbox = GeneralTab:AddRightGroupbox("Anti Lock")
-local frabox = GeneralTab:AddRightGroupbox("Movement")
-local ExploitTab = Window:AddTab("Exploits")
-local WarTycoonBox = ExploitTab:AddLeftGroupbox("War Tycoon")
+local GeneralTab = Window:AddTab("Legitbot")
+local aimbox = GeneralTab:AddRightGroupbox("Aimlock:")
+local velbox = GeneralTab:AddRightGroupbox("Anti-aim:")
+local frabox = GeneralTab:AddRightGroupbox("Enchantments")
+local ExploitTab = Window:AddTab("Modifications")
+local WarTycoonBox = ExploitTab:AddLeftGroupbox("Server Crasher(rpg style):")
+local Features = ExploitTab:AddRightGroupbox("Features:")
 local VisualsTab = Window:AddTab("Visuals")
 local settingsTab = Window:AddTab("Settings")
 
@@ -335,6 +376,12 @@ ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 ThemeManager:ApplyToTab(settingsTab)
 SaveManager:BuildConfigSection(settingsTab)
+
+local dopfunc = settingsTab:AddLeftGroupbox("Main:")
+
+dopfunc:AddButton('Unload', function() Library:Unload() end)
+dopfunc:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+Library.ToggleKeybind = Options.MenuKeybind
 
 aimbox:AddToggle("aimLock_Enabled", {
     Text = "enable/disable AimLock",
@@ -561,8 +608,8 @@ aimbox:AddDropdown("ResolverMethods", {
 })
 
 
-local MainBOX = GeneralTab:AddLeftTabbox("silent aim")
-local Main = MainBOX:AddTab("silent aim")
+local MainBOX = GeneralTab:AddLeftTabbox("Aimbot:")
+local Main = MainBOX:AddTab("Aimbot:")
 
 SilentAimSettings.BulletTP = false
 
@@ -695,7 +742,7 @@ Main:AddSlider("HitChance", {
 end)
 
 local FieldOfViewBOX = GeneralTab:AddLeftTabbox("Field Of View") do
-    local Main = FieldOfViewBOX:AddTab("Visuals")
+    local Main = FieldOfViewBOX:AddTab("Render Fov:")
 
     Main:AddToggle("Visible", {Text = "Show FOV Circle"})
         :AddColorPicker("Color", {Default = Color3.fromRGB(54, 57, 241)})
@@ -855,33 +902,54 @@ end))
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
-
-local BOXEnabled, TRAEnabled, NameTagsEnabled, teamCheckEnabled = false, false, false, false
-local espBoxes, espTracers, espNameTags = {}, {}, {}
+local BOXEnabled, TRAEnabled, NameTagsEnabled, teamCheckEnabled, ChamsEnabled, DistanceEnabled, HealthBarEnabled = false, false, false, false, false, false, false
+local espBoxes, espTracers, espNameTags, espChams, espDistance, espHealthBars = {}, {}, {}, {}, {}, {}
 local boxColor, tracerColor, nameTagColor = Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 255, 255)
+local chamsFillColor, chamsOutlineColor = Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 255, 255)
+local healthBarStartColor = Color3.fromRGB(0, 255, 0)
+local healthBarEndColor = Color3.fromRGB(255, 0, 0)
 
 local function createESPBox(color)
     local box = Drawing.new("Square")
     box.Color, box.Thickness, box.Filled, box.Visible = color, 1, false, false
     return box
 end
-
+local function createHealthBar()
+    local bar = Drawing.new("Square")
+    bar.Thickness = 1
+    bar.Filled = true
+    bar.Visible = false
+    return bar
+end
+local function createDistanceText()
+    local text = Drawing.new("Text")
+    text.Size = 15
+    text.Center = true
+    text.Outline = true
+    text.OutlineColor = Color3.fromRGB(255, 255, 255)
+    text.Visible = false
+    return text
+end
+local function lerpColor(startColor, endColor, t)
+    return Color3.new(
+        startColor.R + (endColor.R - startColor.R) * t,
+        startColor.G + (endColor.G - startColor.G) * t,
+        startColor.B + (endColor.B - startColor.B) * t
+    )
+end
 local function createTracer(color)
     local tracer = Drawing.new("Line")
-    tracer.Color, tracer.Thickness, tracer.Visible = color, 2, false
+    tracer.Color, tracer.Thickness, tracer.Visible = color, 0.25, false
     return tracer
 end
-
 local function createNameTag(color, text)
     local nameTag = Drawing.new("Text")
     nameTag.Color, nameTag.Text, nameTag.Size, nameTag.Center, nameTag.Outline, nameTag.OutlineColor, nameTag.Visible = color, text, 15, true, true, Color3.fromRGB(0, 0, 0), false
     return nameTag
 end
-
 local function smoothInterpolation(from, to, factor)
     return from + (to - from) * factor
 end
-
 local function updateESPBoxes()
     if BOXEnabled then
         for player, box in pairs(espBoxes) do
@@ -909,7 +977,72 @@ local function updateESPBoxes()
         end
     end
 end
-
+local function updateDistance()
+    if DistanceEnabled then
+        for player, distanceText in pairs(espDistance) do
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                if teamCheckEnabled and player.Team == Players.LocalPlayer.Team then
+                    distanceText.Visible = false
+                else
+                    local rootPart = player.Character.HumanoidRootPart
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                    if onScreen then
+                        local distance = (rootPart.Position - Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        distanceText.Text = string.format("%.1f studs", distance)
+                        local box = espBoxes[player]
+                        if box and box.Visible then
+                            distanceText.Position = Vector2.new(box.Position.X + box.Size.X + 5, box.Position.Y + box.Size.Y / 2)
+                        end
+                        distanceText.Visible = true
+                    else
+                        distanceText.Visible = false
+                    end
+                end
+            else
+                distanceText.Visible = false
+            end
+        end
+    else
+        for _, distanceText in pairs(espDistance) do
+            distanceText.Visible = false
+        end
+    end
+end
+local function updateHealthBar()
+    if HealthBarEnabled then
+        for player, healthBar in pairs(espHealthBars) do
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                if teamCheckEnabled and player.Team == Players.LocalPlayer.Team then
+                    healthBar.Visible = false
+                else
+                    local humanoid = player.Character.Humanoid
+                    local rootPart = player.Character.HumanoidRootPart
+                    local screenPosition, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                    if onScreen then
+                        local health = humanoid.Health / humanoid.MaxHealth
+                        local box = espBoxes[player]
+                        if box and box.Visible then
+                            local barWidth = 3
+                            local barHeight = box.Size.Y
+                            healthBar.Size = Vector2.new(barWidth, barHeight * health)
+                            healthBar.Position = Vector2.new(box.Position.X - barWidth - 3, box.Position.Y + (box.Size.Y - barHeight * health))
+                            healthBar.Color = lerpColor(healthBarStartColor, healthBarEndColor, 1 - health)
+                            healthBar.Visible = true
+                        end
+                    else
+                        healthBar.Visible = false
+                    end
+                end
+            else
+                healthBar.Visible = false
+            end
+        end
+    else
+        for _, healthBar in pairs(espHealthBars) do
+            healthBar.Visible = false
+        end
+    end
+end
 local function updateTracers()
     if TRAEnabled then
         for player, tracer in pairs(espTracers) do
@@ -935,7 +1068,6 @@ local function updateTracers()
         end
     end
 end
-
 local function updateNameTags()
     if NameTagsEnabled then
         for player, nameTag in pairs(espNameTags) do
@@ -957,7 +1089,6 @@ local function updateNameTags()
         end
     end
 end
-
 local function addESP(player)
     if player ~= Players.LocalPlayer then
         local box = createESPBox(boxColor)
@@ -967,7 +1098,6 @@ local function addESP(player)
         end)
     end
 end
-
 local function addTracer(player)
     if player ~= Players.LocalPlayer then
         local tracer = createTracer(tracerColor)
@@ -977,7 +1107,6 @@ local function addTracer(player)
         end)
     end
 end
-
 local function addNameTag(player)
     if player ~= Players.LocalPlayer then
         local nameTag = createNameTag(nameTagColor, player.Name)
@@ -987,67 +1116,147 @@ local function addNameTag(player)
         end)
     end
 end
-
+local function addDistanceAndHealthBar(player)
+    if player ~= Players.LocalPlayer then
+        local distanceText = createDistanceText()
+        espDistance[player] = distanceText
+        local healthBar = createHealthBar()
+        espHealthBars[player] = healthBar
+        player.CharacterAdded:Connect(function()
+            espDistance[player] = createDistanceText()
+            espHealthBars[player] = createHealthBar()
+        end)
+    end
+end
 local function removeESP(player)
     if espBoxes[player] then
         espBoxes[player].Visible = false
         espBoxes[player] = nil
     end
 end
-
 local function removeTracer(player)
     if espTracers[player] then
         espTracers[player].Visible = false
         espTracers[player] = nil
     end
 end
-
 local function removeNameTag(player)
     if espNameTags[player] then
         espNameTags[player].Visible = false
         espNameTags[player] = nil
     end
 end
-
+local function removeDistanceAndHealthBar(player)
+    if espDistance[player] then
+        espDistance[player].Visible = false
+        espDistance[player] = nil
+    end
+    if espHealthBars[player] then
+        espHealthBars[player].Visible = false
+        espHealthBars[player] = nil
+    end
+end
+local function createChams(player, fillColor, outlineColor)
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = fillColor
+    highlight.OutlineColor = outlineColor
+    highlight.Parent = player.Character or player.CharacterAdded:Wait()
+    return highlight
+end
+local function updateChams()
+    if ChamsEnabled then
+        for player, highlight in pairs(espChams) do
+            if player.Character then
+                if teamCheckEnabled and player.Team == Players.LocalPlayer.Team then
+                    highlight.Enabled = false
+                else
+                    highlight.Enabled = true
+                    highlight.FillColor = chamsFillColor
+                    highlight.OutlineColor = chamsOutlineColor
+                end
+            else
+                highlight.Enabled = false
+            end
+        end
+    else
+        for _, highlight in pairs(espChams) do
+            highlight.Enabled = false
+        end
+    end
+end
+local function addChams(player)
+    if player ~= Players.LocalPlayer then
+        local highlight = createChams(player, chamsFillColor, chamsOutlineColor)
+        espChams[player] = highlight
+        player.CharacterAdded:Connect(function()
+            espChams[player] = createChams(player, chamsFillColor, chamsOutlineColor)
+        end)
+    end
+end
+local function removeChams(player)
+    if espChams[player] then
+        espChams[player]:Destroy()
+        espChams[player] = nil
+    end
+end
 local function updateTeamColor(player)
     local teamColor = player.Team and player.Team.TeamColor.Color
     if EspTeamColor then
         if espBoxes[player] then espBoxes[player].Color = teamColor end
         if espTracers[player] then espTracers[player].Color = teamColor end
         if espNameTags[player] then espNameTags[player].Color = teamColor end
+        if espChams[player] then
+            espChams[player].FillColor = teamColor
+            espChams[player].OutlineColor = chamsOutlineColor
+        end
     else
         if espBoxes[player] then espBoxes[player].Color = boxColor end
         if espTracers[player] then espTracers[player].Color = tracerColor end
         if espNameTags[player] then espNameTags[player].Color = nameTagColor end
+        if espChams[player] then
+            espChams[player].FillColor = chamsFillColor
+            espChams[player].OutlineColor = chamsOutlineColor
+        end
     end
 end
 
 Players.PlayerAdded:Connect(function(player)
-    addESP(player) addTracer(player) addNameTag(player)
+    addESP(player)
+    addTracer(player)
+    addNameTag(player)
+    addChams(player)
+    addDistanceAndHealthBar(player)
     player:GetPropertyChangedSignal("Team"):Connect(function() updateTeamColor(player) end)
     updateTeamColor(player)
 end)
-
 Players.PlayerRemoving:Connect(function(player)
     removeESP(player)
     removeTracer(player)
     removeNameTag(player)
+    removeChams(player)
+    removeDistanceAndHealthBar(player)
 end)
 
 for _, player in pairs(Players:GetPlayers()) do
     addESP(player)
     addTracer(player)
     addNameTag(player)
+    addChams(player)
+    addDistanceAndHealthBar(player)
 end
+RunService.RenderStepped:Connect(function()
+    updateDistance()
+    updateHealthBar()
+    updateESPBoxes()
+    updateTracers()
+    updateNameTags()
+    updateChams()
+end)
 
-RunService.RenderStepped:Connect(updateESPBoxes)
-RunService.RenderStepped:Connect(updateTracers)
-RunService.RenderStepped:Connect(updateNameTags)
-
-local espbox = VisualsTab:AddLeftGroupbox("esp")
+local espbox = VisualsTab:AddLeftGroupbox("General:")
 
 espbox:AddToggle("TeamCheck", {
-    Text = "Enable Team Check",
+    Text = "Enable TeamCheck",
     Default = false,
     Callback = function(state)
         teamCheckEnabled = state
@@ -1070,7 +1279,7 @@ espbox:AddToggle("TeamCheck", {
 })
 
 espbox:AddToggle("EspTeamColor", {
-    Text = "ESP Team Color",
+    Text = "Use TeamColor",
     Default = false,
     Callback = function(state)
         EspTeamColor = state
@@ -1087,7 +1296,7 @@ espbox:AddToggle("EspTeamColor", {
 })
 
 espbox:AddToggle("EnableESP", {
-    Text = "Box ESP",
+    Text = "Enable Boxes",
     Default = false,
     Callback = function(state)
         BOXEnabled = state
@@ -1105,9 +1314,30 @@ espbox:AddToggle("EnableESP", {
         end
     end,
 })
-
+espbox:AddToggle("EnableHealthBar", {
+    Text = "Enable HealthBar",
+    Default = false,
+    Callback = function(state)
+        HealthBarEnabled = state
+        updateHealthBar()
+    end,
+}):AddColorPicker("HealthBarStartColor", {
+    Text = "HealthBar Start Color",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        healthBarStartColor = color
+        updateHealthBar()
+    end,
+}):AddColorPicker("HealthBarEndColor", {
+    Text = "HealthBar End Color",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        healthBarEndColor = color
+        updateHealthBar()
+    end,
+})
 espbox:AddToggle("EnableNameTags", {
-    Text = "Enable NameTags",
+    Text = "Enable Names",
     Default = false,
     Callback = function(state)
         NameTagsEnabled = state
@@ -1116,7 +1346,7 @@ espbox:AddToggle("EnableNameTags", {
         end
     end,
 }):AddColorPicker("NameTagColor", {
-    Text = "NameTag Color",
+    Text = "Names Color",
     Default = Color3.fromRGB(255, 255, 255),
     Callback = function(color)
         nameTagColor = color
@@ -1125,7 +1355,14 @@ espbox:AddToggle("EnableNameTags", {
         end
     end,
 })
-
+espbox:AddToggle("EnableDistance", {
+    Text = "Enable Distance",
+    Default = false,
+    Callback = function(state)
+        DistanceEnabled = state
+        updateDistance()
+    end,
+})
 espbox:AddToggle("EnableTracer", {
     Text = "Enable Tracers",
     Default = false,
@@ -1146,50 +1383,135 @@ espbox:AddToggle("EnableTracer", {
     end,
 })
 
-local worldbox = VisualsTab:AddRightGroupbox("World")
+espbox:AddToggle("EnableChams", {
+    Text = "Enable Chams",
+    Default = false,
+    Callback = function(state)
+        ChamsEnabled = state
+        updateChams()
+    end,
+}):AddColorPicker("ChamsFillColor", {
+    Text = "Chams Fill Color",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        chamsFillColor = color
+        for _, highlight in pairs(espChams) do
+            highlight.FillColor = color
+        end
+    end,
+}):AddColorPicker("ChamsOutlineColor", {
+    Text = "Chams Outline Color",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        chamsOutlineColor = color
+        for _, highlight in pairs(espChams) do
+            highlight.OutlineColor = color
+        end
+    end,
+})
+
+local worldbox = VisualsTab:AddRightGroupbox("World:")
 
 local lighting = game:GetService("Lighting")
 local camera = game.Workspace.CurrentCamera
-local lockedTime, fovValue, nebulaEnabled = 12, 70, false
+local lockedTime, fovValue, nebulaEnabled, fullbrightEnabled = 12, 70, false, false
 local originalAmbient, originalOutdoorAmbient = lighting.Ambient, lighting.OutdoorAmbient
 local originalFogStart, originalFogEnd, originalFogColor = lighting.FogStart, lighting.FogEnd, lighting.FogColor
+local originalBrightness = lighting.Brightness
 
 local nebulaThemeColor = Color3.fromRGB(173, 216, 230)
 
 worldbox:AddSlider("world_time", {
     Text = "Clock Time", Default = 12, Min = 0, Max = 24, Rounding = 1,
-    Callback = function(v) lockedTime = v lighting.ClockTime = v end,
+    Callback = function(v)
+        lockedTime = v
+        lighting.ClockTime = v
+    end,
 })
 
 local oldNewIndex
 oldNewIndex = hookmetamethod(game, "__newindex", function(self, property, value)
     if not checkcaller() and self == lighting then
-        if property == "ClockTime" then value = lockedTime end
+        if property == "ClockTime" then
+            value = lockedTime
+        end
     end
     return oldNewIndex(self, property, value)
 end)
 
 worldbox:AddSlider("fov_slider", {
     Text = "FOV", Default = 70, Min = 30, Max = 120, Rounding = 2,
-    Callback = function(v) fovValue = v end,
+    Callback = function(v)
+        fovValue = v
+    end,
 })
 
-game:GetService("RunService").RenderStepped:Connect(function() camera.FieldOfView = fovValue end)
+game:GetService("RunService").RenderStepped:Connect(function()
+    camera.FieldOfView = fovValue
+end)
+
+worldbox:AddSlider("fog_start", {
+    Text = "Fog Start", Default = 100, Min = 0, Max = 1000, Rounding = 0,
+    Callback = function(v)
+        lighting.FogStart = v
+    end,
+})
+
+worldbox:AddSlider("fog_end", {
+    Text = "Fog End", Default = 500, Min = 0, Max = 10000, Rounding = 0,
+    Callback = function(v)
+        lighting.FogEnd = v
+    end,
+})
+
+worldbox:AddToggle("fullbright_toggle", {
+    Text = "Fullbright",
+    Default = false,
+    Callback = function(state)
+        fullbrightEnabled = state
+        if state then
+            lighting.Ambient = Color3.new(1, 1, 1)
+            lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+            lighting.Brightness = 2
+            for _, v in pairs(lighting:GetChildren()) do
+                if v:IsA("Light") then
+                    v.Enabled = false
+                end
+            end
+        else
+            lighting.Ambient = originalAmbient
+            lighting.OutdoorAmbient = originalOutdoorAmbient
+            lighting.Brightness = originalBrightness
+            for _, v in pairs(lighting:GetChildren()) do
+                if v:IsA("Light") then
+                    v.Enabled = true
+                end
+            end
+        end
+    end,
+})
 
 worldbox:AddToggle("nebula_theme", {
-    Text = "Ambient World", Default = false,
+    Text = "Ambient World",
+    Default = false,
     Callback = function(state)
         nebulaEnabled = state
         if state then
-            local b = Instance.new("BloomEffect", lighting) b.Intensity, b.Size, b.Threshold, b.Name = 0.7, 24, 1, "NebulaBloom"
-            local c = Instance.new("ColorCorrectionEffect", lighting) c.Saturation, c.Contrast, c.TintColor, c.Name = 0.5, 0.2, nebulaThemeColor, "NebulaColorCorrection"
-            local a = Instance.new("Atmosphere", lighting) a.Density, a.Offset, a.Glare, a.Haze, a.Color, a.Decay, a.Name = 0.4, 0.25, 1, 2, nebulaThemeColor, Color3.fromRGB(25, 25, 112), "NebulaAtmosphere"
+            local b = Instance.new("BloomEffect", lighting)
+            b.Intensity, b.Size, b.Threshold, b.Name = 0.7, 24, 1, "NebulaBloom"
+            local c = Instance.new("ColorCorrectionEffect", lighting)
+            c.Saturation, c.Contrast, c.TintColor, c.Name = 0.5, 0.2, nebulaThemeColor, "NebulaColorCorrection"
+            local a = Instance.new("Atmosphere", lighting)
+            a.Density, a.Offset, a.Glare, a.Haze, a.Color, a.Decay, a.Name = 0.4, 0.25, 1, 2, nebulaThemeColor, Color3.fromRGB(25, 25, 112), "NebulaAtmosphere"
             lighting.Ambient, lighting.OutdoorAmbient = nebulaThemeColor, nebulaThemeColor
             lighting.FogStart, lighting.FogEnd = 100, 500
             lighting.FogColor = nebulaThemeColor
         else
             for _, v in pairs({"NebulaBloom", "NebulaColorCorrection", "NebulaAtmosphere"}) do
-                local obj = lighting:FindFirstChild(v) if obj then obj:Destroy() end
+                local obj = lighting:FindFirstChild(v)
+                if obj then
+                    obj:Destroy()
+                end
             end
             lighting.Ambient, lighting.OutdoorAmbient = originalAmbient, originalOutdoorAmbient
             lighting.FogStart, lighting.FogEnd = originalFogStart, originalFogEnd
@@ -1197,18 +1519,24 @@ worldbox:AddToggle("nebula_theme", {
         end
     end,
 }):AddColorPicker("nebula_color_picker", {
-    Text = "Nebula Color", Default = Color3.fromRGB(173, 216, 230),
+    Text = "Nebula Color",
+    Default = Color3.fromRGB(173, 216, 230),
     Callback = function(c)
         nebulaThemeColor = c
         if nebulaEnabled then
-            local nc = lighting:FindFirstChild("NebulaColorCorrection") if nc then nc.TintColor = c end
-            local na = lighting:FindFirstChild("NebulaAtmosphere") if na then na.Color = c end
+            local nc = lighting:FindFirstChild("NebulaColorCorrection")
+            if nc then
+                nc.TintColor = c
+            end
+            local na = lighting:FindFirstChild("NebulaAtmosphere")
+            if na then
+                na.Color = c
+            end
             lighting.Ambient, lighting.OutdoorAmbient = c, c
             lighting.FogColor = c
         end
     end,
 })
-
 
 local Lighting = game:GetService("Lighting")
 local Visuals = {}
@@ -1386,7 +1714,7 @@ for Name, _ in pairs(Skyboxes) do
     table.insert(SkyboxNames, Name)
 end
 
-local worldbox = VisualsTab:AddRightGroupbox("SkyBox")
+local worldbox = VisualsTab:AddRightGroupbox("SkyBox:")
 local SkyboxDropdown = worldbox:AddDropdown("SkyboxSelector", {
     AllowNull = false,
     Text = "Select Skybox",
@@ -1947,7 +2275,7 @@ WarTycoonBox:AddDropdown("ExplosiveMode", {
 
 local antiLagConnection
 
-WarTycoonBox:AddToggle("AntiLag", {
+Features:AddToggle("AntiLag", {
     Text = "Anti-Lag",
     Default = false,
     Tooltip = "Removing all VisualRockets",
@@ -1977,6 +2305,55 @@ WarTycoonBox:AddToggle("AntiLag", {
         end
     end
 })
+
+local AntiAFKEnabled = false
+local function antiAFK()
+    if AntiAFKEnabled and LocalPlayer.Character then
+        local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            rootPart.CFrame = rootPart.CFrame + Vector3.new(0, 0.1, 0)
+            task.wait(0.1)
+            rootPart.CFrame = rootPart.CFrame - Vector3.new(0, 0.1, 0)
+        end
+        Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(1), 0)
+        task.wait(0.1)
+        Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(-1), 0)
+    end
+end
+
+RunService.RenderStepped:Connect(antiAFK)
+
+Features:AddToggle("anti_afk_toggle", {
+    Text = "Anti-AFK",
+    Default = false,
+    Callback = function(state)
+        AntiAFKEnabled = state
+    end,
+})
+
+Features:AddToggle("WarTycoon", {
+    Text = "Enable Mods",
+    Default = false,
+    Tooltip = "ACS MODULE",
+    Callback = function(value)
+        getgenv().WarTycoon = value
+    end
+})
+
+Features:AddButton('Infinity Ammo', function()
+    modifyWeaponSettings("Ammo", math.huge)
+end)
+Features:AddButton('No Recoil & No Spread', function()
+    modifyWeaponSettings("VRecoil", {0, 0})
+    modifyWeaponSettings("HRecoil", {0, 0})
+    modifyWeaponSettings("MinSpread", 0)
+    modifyWeaponSettings("MaxSpread", 0)
+    modifyWeaponSettings("RecoilPunch", 0)
+    modifyWeaponSettings("AimRecoilReduction", 0)
+end)
+Features:AddButton('Infinity Distance', function()
+    modifyWeaponSettings("Distance", 25000)
+end)
 
 local targetStrafe = GeneralTab:AddLeftGroupbox("Target Strafe")
 local strafeEnabled = false
@@ -2083,7 +2460,6 @@ targetStrafe:AddSlider("strafeSpeedSlider", {
 game:GetService("RunService").RenderStepped:Connect(function()
     if strafeEnabled and strafeAllowed then strafeAroundTarget() end
 end)
-
 while true do
     task.wait()
 
